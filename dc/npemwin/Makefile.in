@@ -1,0 +1,32 @@
+#
+# $Id: Makefile.in,v f54f2b62373a 2009/09/11 16:26:33 nieves $
+#
+@include@ @q@../../../Makefile.inc@q@
+
+PROGNAME =	@PROGNAME@
+
+SRC =           ../nbsp/fm35dc.tcl
+TARGET =	${PROGNAME}
+
+TCLUPPERAIR_LIB =	../../src/fm35.tcl
+TCLUPPERAIR_PKGINDEX = ../../src/pkgIndex.tcl
+TCLUPPERAIR_FILES = ${TCLUPPERAIR_LIB} ${TCLUPPERAIR_PKGINDEX}
+TCLUPPERAIR_INSTALLDIR = ${MYLIBEXECDIR}/tclupperair
+
+INSTALL =       @INSTALL@
+TCLSH =		@TCLSH@
+
+all: ${TARGET}
+
+${TARGET}: ${SRC}
+	cd ../../; ${MAKE}
+	sed -e /%TCLUPPERAIR_INSTALLDIR%/s##${TCLUPPERAIR_INSTALLDIR}# \
+	-e /%TCLSH%/s##${TCLSH}# ${SRC} > ${TARGET}
+
+install: all
+	${INSTALL} -m 644 ${TCLUPPERAIR_FILES} ${TCLUPPERAIR_INSTALLDIR}
+	${INSTALL} -m 755 ${TARGET} ${BINDIR}/${PROGNAME}
+
+clean:
+	cd ../../; ${MAKE} clean
+	rm -f *~ Makefile ${TARGET}

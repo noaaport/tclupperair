@@ -1,0 +1,22 @@
+#
+# $Id: Makefile.in,v f54f2b62373a 2009/09/11 16:26:33 nieves $
+#
+@include@ @q@../Makefile.inc@q@
+
+INSTALL = @INSTALL@
+
+SOURCES = fm35.tcl
+INDEXFILE = pkgIndex.tcl
+TARGET =
+LIBFILES = ${SOURCES} ${INDEXFILE}
+
+all: ${TARGET}
+
+# ${TARGET}: ${SOURCES}
+#	cat ${SOURCES} > ${TARGET}
+
+install: all
+	${INSTALL} -m 0644 ${LIBFILES} ${MYLIBDIR}
+
+clean:
+	rm -f *~ Makefile ${TARGET}
