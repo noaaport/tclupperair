@@ -7,12 +7,14 @@ os=`uname`
 
 case $os in
     *BSD)
+        osarch=`uname -m`
 	osrelease=`uname -r | cut -f 1 -d "-"`
 	osname=freebsd
 	wildcard="${name}-*.tbz"
 	cd ../bsd
 	;;
     Linux)
+        osarch=`uname -m`
 	if [ $flavor = fedoracore ]
 	then
 	    release=`cat /etc/fedora-release`
@@ -43,6 +45,7 @@ case $os in
 	fi
 	;;
     SunOS)
+        osarch=`uname -m`
 	osrelase=
 	osname=solaris
 	osrelease=
@@ -60,6 +63,8 @@ mkdir $pkguploadsubdir
 cd $pkguploadsubdir
 mkdir $osname-$osrelease
 cd $osname-$osrelease
+mkdir $osarch
+cd $osarch
 mdelete *
 mput $wildcard
 quit
