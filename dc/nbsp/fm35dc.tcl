@@ -1,6 +1,6 @@
 #!%TCLSH%
 #
-# $Id: fm35dc.tcl,v f54f2b62373a 2009/09/11 16:26:33 nieves $
+# $Id: fm35dc.tcl,v 8b7538998e10 2010/03/31 18:20:57 nieves $
 #
 
 # Usage: fm35dc [-v] [-c] [-n <na_str>] [-s <parts_sep>] \
@@ -11,7 +11,7 @@
 # dcfm35 -d -s "," -l "|" -n NA < 2009022115.upa
 # dcfm35 -s "," -l "|" -n NA < 2009022115.upa
 #
-# Without options, it is the outputs lines like
+# Without options, the outputs are lines like
 #
 # ttaa 71125 84629 99001 22023 00000 00060 21417
 #
@@ -35,7 +35,7 @@
 #
 # <wmostation>,<wmotime>,<obstation>,<obtime>,<obdata>
 #
-# with <obtime> = hhmm.
+# with <obtime> = hhmm, and <obstation> = station numeric id.
 #
 # With the -d option the output is the decoded data. The element corresponding
 # to each level is a comma-separated list of five or three numbers, depending
