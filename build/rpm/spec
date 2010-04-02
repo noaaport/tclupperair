@@ -25,11 +25,11 @@ make clean
 
 %files
 %defattr(-,root,root)
-/usr/lib/tcluppperair/fm35.tcl
-/usr/lib/tcluppperair/pkgIndex.tcl
-/usr/share/doc/tcluppperair/LICENSE
-/usr/share/doc/tcluppperair/api.README
-/usr/share/doc/tcluppperair/examples/examples.README
-/usr/share/doc/tcluppperair/examples/examples.tgz
+/usr/lib/tclupperair/fm35.tcl
+/usr/lib/tclupperair/pkgIndex.tcl
+/usr/share/doc/tclupperair/LICENSE
+/usr/share/doc/tclupperair/api.README
+/usr/share/doc/tclupperair/examples/examples.README
+/usr/share/doc/tclupperair/examples/examples.tgz
 
 %changelog
