@@ -2,7 +2,8 @@
 
 . ../../configure.inc
 
-PROGNAME=nbspfm35d
+PROGNAME1=nbspfm35d
+PROGNAME2=nbspuatocsv
 
 savedir=`pwd`
 cd ../..
@@ -13,4 +14,5 @@ sed -e "/@include@/s||$INCLUDE|" \
     -e "/@q@/s||$Q|g" \
     -e "/@INSTALL@/s||$INSTALL|" \
     -e "/@TCLSH@/s||$TCLSH|" \
-    -e "/@PROGNAME@/s||$PROGNAME|" Makefile.in > Makefile
+    -e "/@PROGNAME1@/s||$PROGNAME1|" \
+    -e "/@PROGNAME2@/s||$PROGNAME2|" Makefile.in > Makefile

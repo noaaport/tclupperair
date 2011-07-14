@@ -1,12 +1,17 @@
 #
-# $Id: Makefile.in,v f54f2b62373a 2009/09/11 16:26:33 nieves $
+# $Id: Makefile.in,v b66a07506bf5 2011/07/14 19:16:31 jfnieves $
 #
 @include@ @q@../../../Makefile.inc@q@
 
-PROGNAME =	@PROGNAME@
+PROGNAME1 =	@PROGNAME1@
+PROGNAME2 =	@PROGNAME2@
 
-SRC =           ../nbsp/fm35dc.tcl
-TARGET =	${PROGNAME}
+SRC1 =		../nbsp/fm35dc.tcl
+TARGET1 =	${PROGNAME1}
+SRC2 =		../nbsp/uatocsv.tcl
+TARGET2 =	${PROGNAME2}
+
+TARGET =	${TARGET1} ${TARGET2}
 
 TCLUPPERAIR_LIB =	../../src/fm35.tcl
 TCLUPPERAIR_PKGINDEX = ../../src/pkgIndex.tcl
@@ -18,10 +23,15 @@ TCLSH =		@TCLSH@
 
 all: ${TARGET}
 
-${TARGET}: ${SRC}
+${TARGET1}: ${SRC1}
 	cd ../../; ${MAKE}
 	sed -e /%TCLUPPERAIR_INSTALLDIR%/s##${TCLUPPERAIR_INSTALLDIR}# \
-	-e /%TCLSH%/s##${TCLSH}# ${SRC} > ${TARGET}
+	-e /%TCLSH%/s##${TCLSH}# ${SRC1} > ${TARGET1}
+
+${TARGET2}: ${SRC2}
+	cd ../../; ${MAKE}
+	sed -e /%TCLUPPERAIR_INSTALLDIR%/s##${TCLUPPERAIR_INSTALLDIR}# \
+	-e /%TCLSH%/s##${TCLSH}# ${SRC2} > ${TARGET2}
 
 install: all
 	${INSTALL} -m 644 ${TCLUPPERAIR_FILES} ${TCLUPPERAIR_INSTALLDIR}

@@ -1,5 +1,5 @@
 #
-# $Id: fm35.tcl,v 2341dbb04dab 2011/07/14 02:22:14 jfnieves $
+# $Id: fm35.tcl,v b66a07506bf5 2011/07/14 19:16:31 jfnieves $
 #
 package provide upperair::fm35 1.0;
 
@@ -423,18 +423,18 @@ proc ::upperair::fm35::decode {body} {
     foreach d $data {
 	if {$j == 0} {
 	    set level_index [string range $d 0 1];
-	    if {$level_index == 99} {
-		if {[string range $d 2 5] == "999"} {
+	    if {$level_index eq "99"} {
+		if {[string range $d 2 5] eq "999"} {
 		    continue;
 		}
 		set level "surface";
-	    } elseif {$level_index == 88} {
-		if {[string range $d 2 5] == "999"} {
+	    } elseif {$level_index eq "88"} {
+		if {[string range $d 2 5] eq "999"} {
 		    continue;
 		}
 		set level "tropopause";
-	    } elseif {$level_index == 77} {
-		if {[string range $d 2 5] == "999"} {
+	    } elseif {$level_index eq "77"} {
+		if {[string range $d 2 5] eq "999"} {
 		    break;
 		}
 		set level "maxwind";

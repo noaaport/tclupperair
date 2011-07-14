@@ -1,6 +1,6 @@
 #!%TCLSH%
 #
-# $Id: fm35dc.tcl,v 2341dbb04dab 2011/07/14 02:22:14 jfnieves $
+# $Id: fm35dc.tcl,v b66a07506bf5 2011/07/14 19:16:31 jfnieves $
 #
 
 # Usage: fm35dc [-v] [-c] [-d] [-n <na_str>] [-s <parts_sep>] \
@@ -53,6 +53,8 @@
 # windmax,<p_mb>,<wspeed_kt>,<wdir>                         
 # 1000,<height_m>,<temp_c>,<dewp_c>,<wspeed_kt>,<wdir>
 # ...
+#
+# The data is output all in one line.
 #
 # Example:
 #
@@ -380,7 +382,7 @@ if {$option(c) == 1} {
 }
 
 if {$option(l) ne ""} {
-    set g(levels_sep) $option(l);	# default is ":"
+    set g(levels_sep) $option(l);
 }
 
 if {$option(n) ne ""} {
@@ -388,7 +390,7 @@ if {$option(n) ne ""} {
 }
 
 if {$option(s) ne ""} {
-    set g(OFS) $option(s);	# default is ","
+    set g(OFS) $option(s);
 }
 
 if {$argc != 0} {
