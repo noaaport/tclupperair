@@ -1,5 +1,5 @@
 #
-# $Id: fm35.tcl,v f54f2b62373a 2009/09/11 16:26:33 nieves $
+# $Id: fm35.tcl,v 2341dbb04dab 2011/07/14 02:22:14 jfnieves $
 #
 package provide upperair::fm35 1.0;
 
@@ -95,8 +95,8 @@ proc ::upperair::fm35::_decode_temp_dewp {tttdd} {
     # If the tenths digit is odd, the temperature is negative. Otherwise,
     # the temperature is positive.
     # For example:
-    # 234 = 23.4 C 
-    # 123 =-12.3 C
+    # 234 =  23.4 C 
+    # 123 = -12.3 C
     #  DD - Dewpoint depression (C) ... // if missing
     # If DD is less than or equal to 50, then the dewpoint depression
     # is in tenths of a degree C.
@@ -131,6 +131,11 @@ proc ::upperair::fm35::_decode_temp_dewp {tttdd} {
 	set d [expr $d + 50];
     }
     set dewp_c [expr $temp_c - $d];
+
+    # This ensures that there is only one decimal point. Otherwise, e.g.,
+    # things like 20.2 - 0.1 can result is 20.099999999999.
+
+    set dewp_c [format "%.1f" $dewp_c];
     
     return [list $temp_c $dewp_c];
 }

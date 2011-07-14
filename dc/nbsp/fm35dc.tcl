@@ -1,10 +1,15 @@
 #!%TCLSH%
 #
-# $Id: fm35dc.tcl,v 8b7538998e10 2010/03/31 18:20:57 nieves $
+# $Id: fm35dc.tcl,v 2341dbb04dab 2011/07/14 02:22:14 jfnieves $
 #
 
-# Usage: fm35dc [-v] [-c] [-n <na_str>] [-s <parts_sep>] \
+# Usage: fm35dc [-v] [-c] [-d] [-n <na_str>] [-s <parts_sep>] \
 #               [-l <levels_sep>] [-r] <file>};
+#
+# The file can be a .upa file or a raw file, with or without the ccb.
+# If the <parts_sep> is not given, only the data portion is written, not
+# the entire record. If <file> is not given, then it reads from stdin.
+#
 #
 # Examples
 #
@@ -40,7 +45,7 @@
 # With the -d option the output is the decoded data. The element corresponding
 # to each level is a comma-separated list of five or three numbers, depending
 # on the level, in the same order emited by the fm35 library,
-# with each of those multipltes preceeded by the level name: surface,
+# with each of those multiplets preceeded by the level name: surface,
 # tropopause, windmax, 1000, ...:
 #
 # surface,<p_mb>,<temp_c>,<dewp_c>,<wspeed_kt>,<wdir>
@@ -48,7 +53,6 @@
 # windmax,<p_mb>,<wspeed_kt>,<wdir>                         
 # 1000,<height_m>,<temp_c>,<dewp_c>,<wspeed_kt>,<wdir>
 # ...
-#
 #
 # Example:
 #
@@ -63,7 +67,7 @@
 # respectively.
 #
 # With the "-c" (which implies "-d") the input file is assumed to have been
-# cleaned instead of being the raw "upa" file. A cleanup file has all
+# cleaned instead of being the raw "upa" file. A cleanedup file has all
 # the data record in one line:
 #
 # spim 211200 84629 2112 ttaa 71125 84629 99001 22023 ...
@@ -75,14 +79,10 @@ package require textutil::split;
 lappend auto_path %TCLUPPERAIR_INSTALLDIR%;
 package require upperair::fm35;
 
-# The file can be a .upa file or a raw file, with or without the ccb.
-# If the <separator> is not given, only the data portion is written, not
-# the entire record. If <file> is not given, then it reads from stdin.
-#
 set usage {nbspfm35csv [-v] [-c] [-d] [-n <na_str>] [-s <parts_sep>]
 [-l <levels_sep>] <file>};
 
-set optlist {{v} {c} {d} {n.arg ""} {s.arg ""} {l.arg ""}};
+set optlist {v c d {n.arg ""} {s.arg ""} {l.arg ""}};
 
 # The wmo header is searched anywhere in the line, not necessarily
 # at the start, in order to be usable also with the files saved with the ccb.
