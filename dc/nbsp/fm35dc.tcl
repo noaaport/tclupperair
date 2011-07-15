@@ -1,15 +1,14 @@
 #!%TCLSH%
 #
-# $Id: fm35dc.tcl,v b66a07506bf5 2011/07/14 19:16:31 jfnieves $
+# $Id: fm35dc.tcl,v 99e79897d0a2 2011/07/15 01:09:36 jfnieves $
 #
 
 # Usage: fm35dc [-v] [-c] [-d] [-n <na_str>] [-s <parts_sep>] \
-#               [-l <levels_sep>] [-r] <file>};
+#               [-l <levels_sep>] <file>};
 #
 # The file can be a .upa file or a raw file, with or without the ccb.
 # If the <parts_sep> is not given, only the data portion is written, not
 # the entire record. If <file> is not given, then it reads from stdin.
-#
 #
 # Examples
 #
@@ -42,7 +41,8 @@
 #
 # with <obtime> = hhmm, and <obstation> = station numeric id.
 #
-# With the -d option the output is the decoded data. The element corresponding
+# With the -d option the output is the decoded data, and does not contain
+# the wmostation and wmotime fields. The element corresponding
 # to each level is a comma-separated list of five or three numbers, depending
 # on the level, in the same order emited by the fm35 library,
 # with each of those multiplets preceeded by the level name: surface,
@@ -63,8 +63,8 @@
 #
 # give
 #
-# spim,211200,84629,2112 surface,1001,22.0,19.7,0,0 1000,60,21.4,19.7,2,345 ...
-# spim,211200,84629,2112|surface,1001,22.0,19.7,0,0|1000,60,21.4,19.7,2,345|...
+# 84629,2112 surface,1001,22.0,19.7,0,0 1000,60,21.4,19.7,2,345 ...
+# 84629,2112|surface,1001,22.0,19.7,0,0|1000,60,21.4,19.7,2,345|...
 #
 # respectively.
 #
@@ -76,31 +76,6 @@
 # spim,211200,84629,2112,ttaa 71125 84629 99001 22023 ...
 # ttaa 71125 84629 99001 22023 ...
 #
-package require cmdline;
-package require textutil::split;
-lappend auto_path %TCLUPPERAIR_INSTALLDIR%;
-package require upperair::fm35;
-
-set usage {nbspfm35csv [-v] [-c] [-d] [-n <na_str>] [-s <parts_sep>]
-[-l <levels_sep>] <file>};
-
-set optlist {v c d {n.arg ""} {s.arg ""} {l.arg ""}};
-
-# The wmo header is searched anywhere in the line, not necessarily
-# at the start, in order to be usable also with the files saved with the ccb.
-# For the report start marks (ttxx) we have both, at the start (for raw files)
-# and anywhere (for cleanup files).
-#
-set g(wmoheader_regexp) {u[[:alnum:]]{5} [[:alnum:]]{4} \d{6}};
-set g(report_start_regexp) {^tt(aa|bb|cc|dd) \d{5} \d{5}};
-set g(report_end_regexp) {=$};
-set g(report_continuation_regexp) {[\d/]{5}};	# digits or /
-set g(report_start_regexp_any) {tt(aa|bb|cc|dd) \d{5} \d{5}};
-
-set g(data_sep) ",";		# not configurable
-set g(OFS) "";			# -s
-set g(levels_sep) " ";		# -l
-set g(na_str) "";		# -n
 
 proc match_report_start str {
 
@@ -181,25 +156,21 @@ proc obdata_end {} {
 
     if {$option(d) == 0} {
 	# Write out the raw data.
-	if {$g(OFS) eq ""} {
+	if {$g(data_sep) eq ""} {
 	    puts $record(obdata);
 	} else {
 	    set r [join [list $record(wmostation) $record(wmotime) \
 			     $record(obstation) $record(obtime) \
-			     $record(obdata)] $g(OFS)];
+			     $record(obdata)] $g(data_sep)];
 	    puts $r;
 	}
 	return;
     }
 
     set record(decoded_data) [decode_report $record(obdata)];
-    if {$g(OFS) eq ""} {
-	if {([regexp {W|E} $record(decoded_data)] == 0) || ($option(v) == 1)} {
-	    puts $record(decoded_data);
-	}
-    } else {
-	puts [join [list $record(wmostation) $record(wmotime) \
-			 $record(decoded_data)] $g(OFS)];	
+
+    if {([regexp {W|E} $record(decoded_data)] == 0) || ($option(v) == 1)} {
+	puts $record(decoded_data);
     }
 }
 
@@ -237,16 +208,21 @@ proc decode_report {report} {
 	return "E: $errmsg";
     }
 
-    set r "";
-    if {$g(OFS) ne ""} {
-	append r [::upperair::fm35::get_siteid] $g(OFS) \
-	    [::upperair::fm35::get_time];
+    if {$g(data_sep) ne ""} {
+	set sep $g(data_sep);
+    } else {
+	set sep $g(default_data_sep);
     }
+
+    set r "";
+
+    append r [::upperair::fm35::get_siteid] $sep \
+	[::upperair::fm35::get_time];
 
     foreach level [::upperair::fm35::get_levels] {
 	append r $g(levels_sep);
-	append r $level $g(data_sep) \
-	    [join [::upperair::fm35::get_data $level] $g(data_sep)];
+	append r $level $sep \
+	    [join [::upperair::fm35::get_data $level] $sep];
     }
 
     return $r;
@@ -308,8 +284,9 @@ proc process_clean_file {} {
 # <header><some separator>ttxx....
 #
 # where the <header>could be missing. The <header> is then output intact,
-# followed by the <level_sep>, followed by the decoded data. If "-s" was
-# given, the decoded data includes the stnm and time.
+# followed by the <level_sep>, followed by the decoded data.
+# The decoded data includes the stnm and time, but not the wmo information
+# (wmo station, wmo time).
 #
     global g;
     global record;
@@ -348,7 +325,7 @@ proc process_clean_file {} {
 	set record(decoded_data) [decode_report $record(obdata)];
 
 	set r "";
-	append r $header $g(OFS);
+	# append r $header $g(OFS);
 	if {([regexp {W|E} $record(decoded_data)] == 0) || \
 		($option(v) == 1)} {
 	    append r $record(decoded_data);
@@ -356,6 +333,32 @@ proc process_clean_file {} {
 	}
     }
 }
+
+package require cmdline;
+package require textutil::split;
+lappend auto_path /usr/local/libexec/nbsp/tclupperair;
+package require upperair::fm35;
+
+set usage {nbspfm35csv [-v] [-c] [-d] [-l <levels_sep>]
+[-n <na_str>] [-s <data_sep>] <file>};
+
+set optlist {v c d {l.arg ""} {n.arg ""} {s.arg ""}};
+
+# The wmo header is searched anywhere in the line, not necessarily
+# at the start, in order to be usable also with the files saved with the ccb.
+# For the report start marks (ttxx) we have both, at the start (for raw files)
+# and anywhere (for cleanup files).
+#
+set g(wmoheader_regexp) {u[[:alnum:]]{5} [[:alnum:]]{4} \d{6}};
+set g(report_start_regexp) {^tt(aa|bb|cc|dd) \d{5} \d{5}};
+set g(report_end_regexp) {=$};
+set g(report_continuation_regexp) {[\d/]{5}};	# digits or /
+set g(report_start_regexp_any) {tt(aa|bb|cc|dd) \d{5} \d{5}};
+
+set g(default_data_sep) ",";    #
+set g(data_sep) "";		# -s
+set g(levels_sep) " ";		# -l
+set g(na_str) "";		# -n
 
 #
 # main
@@ -390,7 +393,7 @@ if {$option(n) ne ""} {
 }
 
 if {$option(s) ne ""} {
-    set g(OFS) $option(s);
+    set g(data_sep) $option(s);
 }
 
 if {$argc != 0} {
