@@ -1,9 +1,9 @@
 #!%TCLSH%
 #
-# $Id: fm35dc.tcl,v 99e79897d0a2 2011/07/15 01:09:36 jfnieves $
+# $Id: fm35dc.tcl,v 0f218d9601a5 2011/07/15 18:28:30 jfnieves $
 #
 
-# Usage: fm35dc [-v] [-c] [-d] [-n <na_str>] [-s <parts_sep>] \
+# Usage: fm35dc [-v] [-a] [-c] [-d] [-n <na_str>] [-s <parts_sep>] \
 #               [-l <levels_sep>] <file>};
 #
 # The file can be a .upa file or a raw file, with or without the ccb.
@@ -37,12 +37,12 @@
 #
 # where the elements are
 #
-# <wmostation>,<wmotime>,<obstation>,<obtime>,<obdata>
+# <wmostation> <wmotime> <obstation> <obtime> <obdata>
 #
 # with <obtime> = hhmm, and <obstation> = station numeric id.
 #
-# With the -d option the output is the decoded data, and does not contain
-# the wmostation and wmotime fields. The element corresponding
+# With the -d option the data portion of the output is the decoded data.
+# instead of the <obdata>. The element corresponding
 # to each level is a comma-separated list of five or three numbers, depending
 # on the level, in the same order emited by the fm35 library,
 # with each of those multiplets preceeded by the level name: surface,
@@ -63,10 +63,11 @@
 #
 # give
 #
-# 84629,2112 surface,1001,22.0,19.7,0,0 1000,60,21.4,19.7,2,345 ...
-# 84629,2112|surface,1001,22.0,19.7,0,0|1000,60,21.4,19.7,2,345|...
+# spim,211200,84629,2112 surface,1001,22.0,19.7,0,0 1000,60,21.4,19.7,2,345 ...
+# spim,211200,84629,2112|surface,1001,22.0,19.7,0,0|1000,60,21.4,19.7,2,345|...
 #
-# respectively.
+# respectively. If -a is added in this mode, then decoded data will
+# include the stnm,time prior to the levels data.
 #
 # With the "-c" (which implies "-d") the input file is assumed to have been
 # cleaned instead of being the raw "upa" file. A cleanedup file has all
@@ -75,7 +76,6 @@
 # spim 211200 84629 2112 ttaa 71125 84629 99001 22023 ...
 # spim,211200,84629,2112,ttaa 71125 84629 99001 22023 ...
 # ttaa 71125 84629 99001 22023 ...
-#
 
 proc match_report_start str {
 
@@ -146,8 +146,8 @@ proc obdata_append data {
 
 proc obdata_end {} {
 
-    global record;
     global g;
+    global record;
     global option;
 
     set record(_open) 0;
@@ -156,7 +156,7 @@ proc obdata_end {} {
 
     if {$option(d) == 0} {
 	# Write out the raw data.
-	if {$g(data_sep) eq ""} {
+	if {$option(s) eq ""} {
 	    puts $record(obdata);
 	} else {
 	    set r [join [list $record(wmostation) $record(wmotime) \
@@ -169,9 +169,19 @@ proc obdata_end {} {
 
     set record(decoded_data) [decode_report $record(obdata)];
 
-    if {([regexp {W|E} $record(decoded_data)] == 0) || ($option(v) == 1)} {
-	puts $record(decoded_data);
+    if {[regexp {W|E} $record(decoded_data)] != 0} {
+	if {$option(v) != 0} {
+	    puts $record(decoded_data);
+	}
+	return;
     }
+
+    set header [join [list $record(wmostation) $record(wmotime) \
+		 $record(obstation) $record(obtime)] $g(data_sep)];
+
+    set r [join [list $header $record(decoded_data)] $g(levels_sep)];
+
+    puts $r;
 }
 
 proc obdata_start data {
@@ -208,24 +218,23 @@ proc decode_report {report} {
 	return "E: $errmsg";
     }
 
-    if {$g(data_sep) ne ""} {
-	set sep $g(data_sep);
-    } else {
-	set sep $g(default_data_sep);
+    set r [list];
+
+    if {$option(a) == 1} {
+	set h "";
+	append h [::upperair::fm35::get_siteid] $g(data_sep) \
+	    [::upperair::fm35::get_time];
+	lappend r $h;
     }
-
-    set r "";
-
-    append r [::upperair::fm35::get_siteid] $sep \
-	[::upperair::fm35::get_time];
 
     foreach level [::upperair::fm35::get_levels] {
-	append r $g(levels_sep);
-	append r $level $sep \
-	    [join [::upperair::fm35::get_data $level] $sep];
+	set l "";
+	append l $level $g(data_sep);
+	append l [join [::upperair::fm35::get_data $level] $g(data_sep)];
+	lappend r $l;
     }
 
-    return $r;
+    return [join $r $g(levels_sep)];
 }
 
 proc process_raw_file {} {
@@ -284,12 +293,10 @@ proc process_clean_file {} {
 # <header><some separator>ttxx....
 #
 # where the <header>could be missing. The <header> is then output intact,
-# followed by the <level_sep>, followed by the decoded data.
-# The decoded data includes the stnm and time, but not the wmo information
-# (wmo station, wmo time).
-#
+# followed by the <level_sep>, followed by the decoded data. If "-a" was
+# given, the decoded data includes the stnm and time.
+
     global g;
-    global record;
     global option;
 
     while {[gets $g(F) line] >= 0 } {
@@ -306,7 +313,7 @@ proc process_clean_file {} {
 	    set part "tt";
 	    append part $s1;	# s1 contains the aa, bb, ...
 	    set start [string first $part $line];
-	    set record(obdata) [string range $line $start end];
+	    set obdata [string range $line $start end];
 	    if {$start == 0} {
 		set header "";
 	    } else {
@@ -322,15 +329,23 @@ proc process_clean_file {} {
 	    continue;
 	}
 
-	set record(decoded_data) [decode_report $record(obdata)];
+	set decoded_data [decode_report $obdata];
 
-	set r "";
-	# append r $header $g(OFS);
-	if {([regexp {W|E} $record(decoded_data)] == 0) || \
-		($option(v) == 1)} {
-	    append r $record(decoded_data);
-	    puts $r;
+	if {[regexp {W|E} $decoded_data] == 1} {
+	    if {$option(v) == 1} {
+		puts $decoded_data;
+	    }
+	    return;
 	}
+
+	
+	set r "";
+	if {$header ne ""} {
+	    append r $header $g(levels_sep);
+	}
+	
+	append r $decoded_data;
+	puts $r;
     }
 }
 
@@ -339,10 +354,10 @@ package require textutil::split;
 lappend auto_path /usr/local/libexec/nbsp/tclupperair;
 package require upperair::fm35;
 
-set usage {nbspfm35csv [-v] [-c] [-d] [-l <levels_sep>]
+    set usage {nbspfm35csv [-v] [-a] [-c] [-d] [-l <levels_sep>]
 [-n <na_str>] [-s <data_sep>] <file>};
 
-set optlist {v c d {l.arg ""} {n.arg ""} {s.arg ""}};
+set optlist {v a c d {l.arg ""} {n.arg ""} {s.arg ""}};
 
 # The wmo header is searched anywhere in the line, not necessarily
 # at the start, in order to be usable also with the files saved with the ccb.
@@ -355,8 +370,7 @@ set g(report_end_regexp) {=$};
 set g(report_continuation_regexp) {[\d/]{5}};	# digits or /
 set g(report_start_regexp_any) {tt(aa|bb|cc|dd) \d{5} \d{5}};
 
-set g(default_data_sep) ",";    #
-set g(data_sep) "";		# -s
+set g(data_sep) ",";		# -s
 set g(levels_sep) " ";		# -l
 set g(na_str) "";		# -n
 

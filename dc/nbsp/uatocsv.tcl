@@ -1,14 +1,14 @@
 #!%TCLSH%
 #
-# $Id: uatocsv.tcl,v 99e79897d0a2 2011/07/15 01:09:36 jfnieves $
+# $Id: uatocsv.tcl,v 0f218d9601a5 2011/07/15 18:28:30 jfnieves $
 #
 # Usage: uatocsv [-h] [-i] [-l <levels_sep>] [-n <na_str>] [-s <datasep>]
 #                [<file>]
 #
 # The input data should be in the format such as
 #
-# 42410,2112|surface,1000,26.4,-85.6,3,270|1000,54,26.4,-85.6,3,270
-# 42410,2112 surface,1000,26.4,-85.6,3,270 1000,54,26.4,-85.6,3,270
+# spim,211200,84629,2112 surface,1001,22.0,19.7,0,0 1000,60,21.4,19.7,2,345 ...
+# spim,211200,84629,2112|surface,1001,22.0,19.7,0,0|1000,60,21.4,19.7,2,345|...
 #
 # as returned by the fm35dc decoder, where the <levels_sep> (" " or "|")
 # separates the different levels. So, an example usage is
@@ -53,15 +53,22 @@
 # Functions
 #
 
+proc write_header {} {
+
+    global g;
+
+    puts -nonewline "# ";
+    puts [join [list station time \
+		    level height_m p_mb temp_c dewp_c wspeed_kt wdir] \
+	      $g(output_sep)];
+}
+
 proc process_file {} {
 
     global g;
 
     if {$g(header) == 1} {
-	puts -nonewline "# ";
-	puts [join [list station time \
-			level height_m p_mb temp_c dewp_c wspeed_kt wdir] \
-		  $g(output_sep)];
+	write_header;
     }
 
     while {[gets $g(F) data] >= 0} {
@@ -73,6 +80,22 @@ proc process_file {} {
 	    puts [join $output_records "\n"];
 	}
     }
+}
+
+proc process_input {} {
+
+    global g;
+
+    set output_records [process_line $g(input_str)];
+    if {[llength $output_records] == 0} {
+	return;
+    }
+
+    if {$g(header) == 1} {
+	write_header;
+    }
+
+    puts [join $output_records "\n"];
 }
 
 proc process_line {line} {
@@ -130,7 +153,7 @@ package require fileutil;
 
 set usage {uatocsv [-h] [-i] [-l <levels_sep>] [-n <na_str>] [-s <input_sep>]
     [<file>]};
-set optlist {h i {l.arg ""} {n.arg ""} {s.arg ""}}; 
+set optlist {h i {l.arg ""} {n.arg ""} {s.arg ""}};
 
 set g(output_sep) ",";	# not configurable
 set g(levels_sep) "";	# -l
@@ -187,8 +210,5 @@ if {$option(i) == 0} {
         exit 1;	
     }
 } else {
-    set output_records [process_line $g(input_str)];
-    if {[llength $output_records] != 0} {
-	puts [join $output_records "\n"];
-    }
+    process_input;
 }
