@@ -1,5 +1,5 @@
 #
-# $Id: fm35.tcl,v b66a07506bf5 2011/07/14 19:16:31 jfnieves $
+# $Id: fm35.tcl,v ea2e89a4a2e0 2011/07/15 19:00:31 jfnieves $
 #
 package provide upperair::fm35 1.0;
 
@@ -128,7 +128,7 @@ proc ::upperair::fm35::_decode_temp_dewp {tttdd} {
     if {$d <= 50} {
 	set d [expr $d / 10.0];
     } else {
-	set d [expr $d + 50];
+	set d [expr $d - 50];
     }
     set dewp_c [expr $temp_c - $d];
 

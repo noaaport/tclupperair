@@ -1,6 +1,6 @@
 #!%TCLSH%
 #
-# $Id: fm35dc.tcl,v 0f218d9601a5 2011/07/15 18:28:30 jfnieves $
+# $Id: fm35dc.tcl,v ea2e89a4a2e0 2011/07/15 19:00:31 jfnieves $
 #
 
 # Usage: fm35dc [-v] [-a] [-c] [-d] [-n <na_str>] [-s <parts_sep>] \
@@ -334,8 +334,9 @@ proc process_clean_file {} {
 	if {[regexp {W|E} $decoded_data] == 1} {
 	    if {$option(v) == 1} {
 		puts $decoded_data;
+		return;
 	    }
-	    return;
+	    continue;
 	}
 
 	
@@ -354,8 +355,8 @@ package require textutil::split;
 lappend auto_path /usr/local/libexec/nbsp/tclupperair;
 package require upperair::fm35;
 
-    set usage {nbspfm35csv [-v] [-a] [-c] [-d] [-l <levels_sep>]
-[-n <na_str>] [-s <data_sep>] <file>};
+set usage {nbspfm35dc [-v] [-a] [-c] [-d] [-l <levels_sep>]
+    [-n <na_str>] [-s <data_sep>] <file>};
 
 set optlist {v a c d {l.arg ""} {n.arg ""} {s.arg ""}};
 
