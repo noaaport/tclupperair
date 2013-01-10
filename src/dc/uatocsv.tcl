@@ -1,6 +1,10 @@
 #!%TCLSH%
 #
-# $Id: uatocsv.tcl,v 0f218d9601a5 2011/07/15 18:28:30 jfnieves $
+# $Id$
+#
+# Copyright (c) 2008 Jose F. Nieves <nieves@ltp.uprrp.edu>
+#
+# See LICENSE
 #
 # Usage: uatocsv [-h] [-i] [-l <levels_sep>] [-n <na_str>] [-s <datasep>]
 #                [<file>]
@@ -49,10 +53,27 @@
 # If the [-i] option is used, then the non-option argument is taken
 # to be a data record instead of a file name.
 
+package require cmdline;
+package require fileutil;
+
+set usage {uatocsv [-h] [-i] [-l <levels_sep>] [-n <na_str>] [-s <input_sep>]
+    [<file>]};
+set optlist {h i {l.arg ""} {n.arg ""} {s.arg ""}};
+
+set g(output_sep) ",";	# not configurable
+set g(levels_sep) "";	# -l
+set g(na_str) "";	# -n
+set g(data_sep) ",";    # -s
+
+# Variables
+set g(F) stdin;
+set g(fpath) "";
+set g(input_str) "";
+set g(header) 0;     # add columns header
+
 #
 # Functions
 #
-
 proc write_header {} {
 
     global g;
@@ -148,24 +169,6 @@ proc process_line {line} {
 #
 # main
 #
-package require cmdline;
-package require fileutil;
-
-set usage {uatocsv [-h] [-i] [-l <levels_sep>] [-n <na_str>] [-s <input_sep>]
-    [<file>]};
-set optlist {h i {l.arg ""} {n.arg ""} {s.arg ""}};
-
-set g(output_sep) ",";	# not configurable
-set g(levels_sep) "";	# -l
-set g(na_str) "";	# -n
-set g(data_sep) ",";    # -s
-
-# Variables
-set g(F) stdin;
-set g(fpath) "";
-set g(input_str) "";
-set g(header) 0;     # add columns header
-
 array set option [::cmdline::getoptions argv $optlist $usage];
 set argc [llength $argv];
 

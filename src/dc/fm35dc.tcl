@@ -1,8 +1,11 @@
 #!%TCLSH%
 #
-# $Id: fm35dc.tcl,v ea2e89a4a2e0 2011/07/15 19:00:31 jfnieves $
+# $Id$
 #
-
+# Copyright (c) 2008 Jose F. Nieves <nieves@ltp.uprrp.edu>
+#
+# See LICENSE
+#
 # Usage: fm35dc [-v] [-a] [-c] [-d] [-n <na_str>] [-s <parts_sep>] \
 #               [-l <levels_sep>] <file>};
 #
@@ -77,7 +80,46 @@
 # spim,211200,84629,2112,ttaa 71125 84629 99001 22023 ...
 # ttaa 71125 84629 99001 22023 ...
 
-proc match_report_start str {
+package require cmdline;
+package require textutil::split;
+lappend auto_path "%TCLUPPERAIR_INSTALLDIR%";
+package require upperair::fm35;
+
+set usage {nbspfm35dc [-v] [-a] [-c] [-d] [-l <levels_sep>]
+    [-n <na_str>] [-s <data_sep>] <file>};
+
+set optlist {v a c d {l.arg ""} {n.arg ""} {s.arg ""}};
+
+# The wmo header is searched anywhere in the line, not necessarily
+# at the start, in order to be usable also with the files saved with the ccb.
+# For the report start marks (ttxx) we have both, at the start (for raw files)
+# and anywhere (for cleanup files).
+#
+set g(wmoheader_regexp) {u[[:alnum:]]{5} [[:alnum:]]{4} \d{6}};
+set g(report_start_regexp) {^tt(aa|bb|cc|dd) \d{5} \d{5}};
+set g(report_end_regexp) {=$};
+set g(report_continuation_regexp) {[\d/]{5}};	# digits or /
+set g(report_start_regexp_any) {tt(aa|bb|cc|dd) \d{5} \d{5}};
+
+set g(data_sep) ",";		# -s
+set g(levels_sep) " ";		# -l
+set g(na_str) "";		# -n
+
+set record(wmoid) "";
+set record(wmostation) "";
+set record(wmotime) "";
+#
+set record(obpart) "";		# ttaa, ...
+set record(obtime) "";		# from the record (1st after the ttaa)
+set record(obstation) "";	# from the record (2nd after the ttaa)
+set record(obdata) "";		# raw data record
+set record(_open) 0;
+
+# Variables
+set g(F) stdin;
+set g(fpath) "";
+
+proc match_report_start {str} {
 
     global g;
 
@@ -88,7 +130,7 @@ proc match_report_start str {
     return 0;
 }
 
-proc match_report_end str {
+proc match_report_end {str} {
 
     global g;
 
@@ -99,7 +141,7 @@ proc match_report_end str {
     return 0;
 }
 
-proc match_report_continuation str {
+proc match_report_continuation {str} {
 
     global g;
 
@@ -110,7 +152,7 @@ proc match_report_continuation str {
     return 0;
 }
 
-proc obdata_init data {
+proc obdata_init {data} {
 
     global record;
 
@@ -133,7 +175,7 @@ proc obdata_init data {
     }
 }
 
-proc obdata_append data {
+proc obdata_append {data} {
 
     global record;
 
@@ -184,7 +226,7 @@ proc obdata_end {} {
     puts $r;
 }
 
-proc obdata_start data {
+proc obdata_start {data} {
 
     global record;
 
@@ -350,48 +392,9 @@ proc process_clean_file {} {
     }
 }
 
-package require cmdline;
-package require textutil::split;
-lappend auto_path /usr/local/libexec/nbsp/tclupperair;
-package require upperair::fm35;
-
-set usage {nbspfm35dc [-v] [-a] [-c] [-d] [-l <levels_sep>]
-    [-n <na_str>] [-s <data_sep>] <file>};
-
-set optlist {v a c d {l.arg ""} {n.arg ""} {s.arg ""}};
-
-# The wmo header is searched anywhere in the line, not necessarily
-# at the start, in order to be usable also with the files saved with the ccb.
-# For the report start marks (ttxx) we have both, at the start (for raw files)
-# and anywhere (for cleanup files).
-#
-set g(wmoheader_regexp) {u[[:alnum:]]{5} [[:alnum:]]{4} \d{6}};
-set g(report_start_regexp) {^tt(aa|bb|cc|dd) \d{5} \d{5}};
-set g(report_end_regexp) {=$};
-set g(report_continuation_regexp) {[\d/]{5}};	# digits or /
-set g(report_start_regexp_any) {tt(aa|bb|cc|dd) \d{5} \d{5}};
-
-set g(data_sep) ",";		# -s
-set g(levels_sep) " ";		# -l
-set g(na_str) "";		# -n
-
 #
 # main
 #
-set record(wmoid) "";
-set record(wmostation) "";
-set record(wmotime) "";
-#
-set record(obpart) "";		# ttaa, ...
-set record(obtime) "";		# from the record (1st after the ttaa)
-set record(obstation) "";	# from the record (2nd after the ttaa)
-set record(obdata) "";		# raw data record
-set record(_open) 0;
-
-# Variables
-set g(F) stdin;
-set g(fpath) "";
-
 array set option [::cmdline::getoptions argv $optlist $usage];
 set argc [llength $argv];
 

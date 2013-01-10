@@ -1,5 +1,5 @@
 #!/bin/sh
 
-. ../configure.inc
+. ../../configure.inc
 
 configure_default
